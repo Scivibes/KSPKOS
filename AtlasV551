@@ -1,22 +1,25 @@
+//IMPORTANT INFO
+
+//MAKE SURE YOUR FIRST STAGE TANK IS NAMED s1 WITH THE NAMETAG FUNCTION
+//MAKE SURE YOUR ACTION GROUP 1 WILL DEPLOY FAIRINGS
+
 SAS off.
 lock throttle to 0.
 
 clearscreen.
 wait 3.
 
-set targetAp to 250000.
-set targetPer to 250000.
-set azimuth to 90.
+set targetAp to 250000. //Approximate apoapsis
+set targetPer to 250000. //Usually not the periapsis, best to keep the same as apoapsis
+set azimuth to 90. //Azimuth
 set firstTWR to 1.77.
-set secondTWR to 1.17.
 set endAlt to (120000 / firstTWR).
-set endTWR to 6.05.
 set finalPitch to 10.
 set startRoll to 270.
 set endRoll to 270.
 set boosterJet to 90.
 set liftoffTimer to 0.
-set s1 to ship:partsdubbed("s1")[0].
+set s1 to ship:partsdubbed("s1")[0]. //Helps with burnout detection, make sure tank is named s1
 set jet to 0.
 
 set mode to 1.
