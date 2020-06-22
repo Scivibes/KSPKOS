@@ -1,20 +1,23 @@
+//IMPORTANT INFO
+
+//MAKE SURE YOUR FIRST STAGE FUEL TANK IS NAMED s1 WITH THE NAMETAG FUNCTION
+//MAKE SURE YOUR FAIRINGS WILL DEPLOY WITH ACTION GROUP 1
+
 SAS off.
 lock throttle to 0.
 
 clearscreen.
 wait 3.
 
-set targetAp to 400000.
-set targetPer to 400000.
-set azimuth to 90.
-set firstTWR to 1.17.
-set secondTWR to 1.17.
-set endTWR to 6.05.
+set targetAp to 400000. // This end up being the approximate apogee, more or less
+set targetPer to 400000. // This will not be the periapsis, I'm still trying to figure out a way to make it more precise 
+set azimuth to 90. //Azimuth of launch
+set firstTWR to 1.17. //Approximate surface level TWR
 set endAlt to (160000 / firstTWR).
-set finalPitch to 13.
+set finalPitch to 13. // If the 2nd stage starts to fall back into the ocean, increase this
 set startRoll to 270.
 set endRoll to 270.
-set s1 to ship:partsdubbed("s1")[0].
+set s1 to ship:partsdubbed("s1")[0]. //Make sure to name your first stage tank s1 with the kOS nametag, helps with burnout detection (better than waiting for thrust to tail off, sometimes the staging won't automatically go off)
 
 set mode to 1.
 
@@ -37,7 +40,6 @@ until mode = 0 {
 		lock steering to heading (azimuth, pitchAim) + R(0,0,endRoll).
 		
 		if (s1:resources[2]:amount < 5) {
-			set jet to 3.
 			lock throttle to 0.
 			wait 2.
 			stage.
@@ -50,6 +52,7 @@ until mode = 0 {
 		if liftoffTimer > 115 {
 			set endRoll to 0.
 		}
+		//Very lazy way of mantaining Gees
 		if liftoffTimer > 150 and liftoffTimer < 170{
 			lock throttle to 0.8.
 		}
@@ -63,10 +66,9 @@ until mode = 0 {
 			lock throttle to 0.2.
 		}
 		
+		//Deploys the fairings, make sure they're bound to action group 1
 		if SHIP:ALTITUDE > 105000 and SHIP:ALTITUDE < 110000{
 			toggle ag1.
-			wait 2.
-			toggle ag2.
 		}
 	
 	}
