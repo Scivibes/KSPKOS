@@ -1,15 +1,21 @@
+//IMPORTANT INFO
+
+//MAKE SURE EITHER THE PORT OR STARBORD BOOSTER IS NAMED booster WITH THE NAMETAG FUNCTION
+//MAKE SURE THE ENGINE OF THE CENTER CORE IS NAMED cE WITH THE NAMETAG FUNCTION
+//MAKE SURE THE 2ND STAGE ENGINE IS NAMED e2 WITH THE NAMETAG FUNCTION, THIS IS FOR THE NOZZLE EXTENTION DEPLOY ANIMATION
+//REMOVE ALL LINES ASSOCIATED WITH VARIABLE rl IF YOU DON'T HAVE A NOZZLE THAT WILL DEPLOY
+//ACTION GROUPS ASSOCIATED WITH THE NOZZLE WILL CHANGE DEPENDING ON THE MOD. I'M WORKING ON A FILE TO HELP DIAGNOSE THE PROCESS
+
 SAS off.
 lock throttle to 0.
 
 clearscreen.
 wait 3.
 
-set targetAp to 888000.
-set targetPer to 275000.
-set azimuth to 95 .
+set targetAp to 888000. //Approximate apogee
+set targetPer to 275000. //Perigee will be pretty random
+set azimuth to 95.
 set firstTWR to 1.26.
-set secondTWR to 0.26.
-set endTWR to 7.
 set endAlt to (100000 / firstTWR).
 set finalPitch to 15.
 set startRoll to 270.
@@ -17,28 +23,12 @@ set endRoll to 0.
 set booster to ship:partsdubbed("booster")[0].
 set cE to ship:partsdubbed("cE")[0].
 set rl to ship:partsdubbed("e2")[0].
-set fe to ship:partsdubbed("fireball").
 set mode to 1.
 set jet to 0.
 
 until mode = 0 {
 	if mode = 1 {
 		lock throttle to 1.
-		for e in fe {
-			e:activate().
-		}
-		set fe[0]:thrustlimit to 40.
-		set fe[1]:thrustlimit to 30.
-		set fe[2]:thrustlimit to 50.
-		set fe[3]:thrustlimit to 20.
-		set fe[4]:thrustlimit to 45.
-		set fe[5]:thrustlimit to 35.
-		wait 1.5.
-		stage.
-		wait 2.
-		for e in fe {
-			e:shutdown().
-		}
 		wait 2.5.
 		stage.
 		set steeringmanager:ROLLTS to 5.
