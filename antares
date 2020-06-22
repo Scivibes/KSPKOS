@@ -1,3 +1,7 @@
+//IMPORTANT INFO
+//MAKE SURE THE SOLID MOTOR SECOND STAGE IS NAMED s2 WITH THE NAMETAG FUNCTION
+//MAKE SURE THE FAIRINGS ARE BOUND TO ACTION GROUP 1
+
 SAS off.
 lock throttle to 0.
 
@@ -8,8 +12,6 @@ set targetAp to 400000.
 set targetPer to 400000.
 set azimuth to 128.65.
 set firstTWR to 1.19.
-set secondTWR to 0.26.
-set endTWR to 7.
 set endAlt to (150000 / firstTWR).
 set finalPitch to 8.
 set startRoll to 270.
