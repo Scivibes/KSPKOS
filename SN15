@@ -1,3 +1,13 @@
+//Action groups needed
+//Gear - landing gear, duh
+//AG2 - toggle front fin deploy
+//AG3 - toggle back fin deploy
+//AG4 - auto-level legs of body
+//AG7, AG8, AG9 - raptor toggle and gimbal toggle. Shutdown order goes ag9 ag8, ag7 so choose accordingly
+//Name the nosecone part "nose" with the kOS nametags
+//Name each fin based on its position, i.e. front left = "fl", rear right = "rr"
+//Make sure their deploy direction is backwards
+
 set mode to 1.
 clearscreen.
 set offset to 40.3164.
