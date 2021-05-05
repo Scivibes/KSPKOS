@@ -1,0 +1,476 @@
+set mode to 1.
+clearscreen.
+set offset to 40.3164.
+
+local altvelPID is PIDLOOP(0.2, 0, 0.04, -10, 35).
+local velthrPID is PIDLOOP(0.05, 0.05, 0.001, 0.01, 1).
+
+local latvelPID is PIDLOOP(6, 0, 40, -0.10, 0.10).
+local velpitPID is PIDLOOP(8000, 100, 3000, -15, 15).
+local velpitPIDF is PIDLOOP(10, 0, 30, -5, 5).
+
+local lngvelPID is PIDLOOP(6, 0, 40, -0.10, 0.10).
+local velyawPID is PIDLOOP(8000, 100, 3000, -15, 15).
+local velyawPIDF is PIDLOOP(800, 0, 500, -5, 5).
+
+local rollpidF is PIDLOOP(1000, 0, 500, -5, 5).
+
+set startLat to ship:geoposition:lat.
+set startLng to ship:geoposition:lng.
+
+set fl to ship:partsdubbed("fl")[0].
+set fr to ship:partsdubbed("fr")[0].
+set rl to ship:partsdubbed("rl")[0].
+set rr to ship:partsdubbed("rr")[0].
+
+set targLat to 25.9665217841607.
+set targLng to -97.154589188553.
+set targGeo to latlng(targLat, targLng).
+
+set noseCone to ship:partsdubbed("nose")[0].
+
+set startRoll to 180.
+set endRoll to 180.
+set pitchAim to 90.
+set steerPitch to 0.
+set steerYaw to 0.
+set steerRoll to 0.
+
+set shutdown1 to 0.
+set shutdown2 to 0.
+
+set startT to time:seconds.
+set oldT to startT.
+set prevPos to ship:geoposition.
+wait 0.01.
+set frame to 25.
+set dAng to 0.
+set hoverWait to 0.
+set landingMode to 0.
+set targDist to 0.
+set vehDist to 0.
+set dVeh to 0.
+set dTargDist to 0.
+set dTargDist1 to 0.
+set dTargDist2 to 0.
+set dTargDist3 to 0.
+set dTargDist4 to 0.
+set dTargDist5 to 0.
+set dTargDist6 to 0.
+set dTargDist7 to 0.
+set dTargDist8 to 0.
+set dTargDist9 to 0.
+set avgDTarg to 0.
+
+set dLat to 0.
+set dLng to 0.
+set dImpLat to 0.
+set dImpLng to 0.
+
+until mode = 0 {
+	print "Mode: " + mode at (4,2).
+	print "Altitude: " + (alt:radar - offset) at (4,3).
+	print "r_p: " + ret_pitch() at (4,4).
+	print "t_b: " + tar_bearing() + 180 at (4,5).
+	print "steerPitch: " + steerPitch at (4,6).
+	print "steerYaw: " + steerYaw at (4,7).
+	print "steerRoll: " + steerRoll at (4,8).
+	print "targDist: " + targDist at (4,9).
+	print "dTargDist: " + dTargDist at (4,10).
+	print "avg dTargDist: " + avgDTarg at (4,11).
+	print "vehDist: " + vehDist at (4,12).
+	print "dVeh: " + dVeh at (4,13).
+	
+	set missionT to time:seconds.
+	set dt to missionT - oldT.
+	set curPos to ship:geoposition.
+	set velLat to (prevPos:lat - curPos:lat)/dt.
+	set velLng to (prevPos:lng - curPos:lng)/dt.
+	set dAng to mod((tar_bearing() - vel_bearing())+360, 360).
+	set dVeh to (vehDist - veh_dist())/dt.
+	set vehDist to veh_dist().
+	
+	set dTargDist9 to dTargDist8.
+	set dTargDist8 to dTargDist7.
+	set dTargDist7 to dTargDist6.
+	set dTargDist6 to dTargDist5.
+	set dTargDist5 to dTargDist4.
+	set dTargDist4 to dTargDist3.
+	set dTargDist3 to dTargDist2.
+	set dTargDist2 to dTargDist1.
+	set dTargDist1 to dTargDist.
+	set dTargDist to targDist - imp_dist(targLat, targLng).
+	set targDist to imp_dist(targLat, targLng).
+	
+	set dLat to ship:geoposition:lat - targLat.
+	set dLng to ship:geoposition:lng - targLng.
+	set dImpLat to impLoc():lat - targLat.
+	set dImpLng to impLoc():lng - targLng.
+	
+	set avgDTarg to (dTargDist + dTargDist1 + dTargDist2 + dTargDist3 + dTargDist4+ dTargDist5+ dTargDist6+ dTargDist7+ dTargDist8+ dTargDist9) / 10.
+	
+	if frame = 25 {
+		set frame to 0.
+		clearscreen.
+	} else {
+		set frame to frame + 1.
+	}
+	
+	if mode = 1 {
+		clearscreen.
+		lock throttle to 1.0.
+		lock steering to heading(90, 90) + R(0,0,startRoll).
+		wait 2.
+		clearscreen.
+		print "Now hop!".
+		stage.
+		set mode to 2.
+		set altvelPID:setpoint to 15000.
+		wait 5.
+		stage.
+		set steeringmanager:ROLLTS to 6.
+		set steeringmanager:rolltorqueadjust to 0.1.
+		wait 2.
+		clearscreen.
+	}
+	if mode = 2 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+		if (alt:radar > 3000) {
+			set altvelPID:maxoutput to 42.
+			set pitchAim to 89.
+			set mode to 2.1.
+			clearscreen.
+		}
+	}
+	if mode = 2.1 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+		if (alt:radar > 4500) {
+			set altvelPID:maxoutput to 48.
+			set mode to 2.2.
+			set pitchAim to 88.5.
+			clearscreen.
+		}
+	}
+	if mode = 2.2 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+		if (alt:radar > 5000) {
+			set altvelPID:maxoutput to 53.
+			set pitchAim to 89.
+			set mode to 3.
+			clearscreen.
+		}
+	}
+	if mode = 3 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+		if (alt:radar > 7000) {
+			set velthrPID:maxoutput to 1.
+			toggle ag9.
+			set mode to 4.
+			set pitchAim to 87.
+			set steerYaw to 1.1.
+			set altvelPID:maxoutput to 61.
+			clearscreen.
+		}
+	}
+	if mode = 4 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		lock steering to heading(90, pitchAim) + R(steerYaw,0,endRoll).
+		if (alt:radar > 8500) {
+			set mode to 4.1.
+			set altvelPID:maxoutput to 65.
+			set pitchAim to 88.2.
+			clearscreen.
+		}
+	}
+	if mode = 4.1 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		lock steering to heading(90, pitchAim) + R(steerYaw,0,endRoll).
+		if (alt:radar > 11500) {
+			set altvelPID:maxoutput to 69.
+			set mode to 4.2.
+		}
+	}
+	
+	if mode = 4.2 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		
+		lock steering to heading(90, pitchAim) + R(steerYaw,0,endRoll).
+		if (alt:radar > 13500) {
+			set velthrPID:maxoutput to 1.
+			toggle ag8.
+			set mode to 5.
+			set pitchAim to 88.
+			set steerYaw to 0.
+			set altvelPID:maxoutput to 70.
+			clearscreen.
+			//RCS on.
+		}
+	}	
+	if mode = 5 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+
+		if (alt:radar > 15000) {
+			set mode to 5.1.
+			set velthrPID:minoutput to 0.01.
+			set steerYaw to 0.
+		}
+	}
+	
+	if mode = 5.1 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+	
+		lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+		print "hW: " + hoverWait at (4,14).
+		if (hoverWait > 150) {
+			set altvelPID:setpoint to -5.
+			set pitchAim to 180.
+			lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+			wait 3.4.
+			lock throttle to 0.
+			toggle ag2.
+			wait 0.1.
+			toggle ag7.
+			set pitchAim to 180.
+			wait 0.01.
+			lock steering to heading(90, pitchAim) + R(0,0,endRoll).
+			wait 0.01.
+			RCS on.
+			noseCone:getmodule("ModuleCommand"):doevent("control point: forward").
+			set pitchAim to 90.
+			toggle ag3.
+			wait 1.
+			//toggle ag1.
+			set mode to 6.
+			set rotX to 0.
+			set rotY to 0.
+			set oldX to 0.
+			set oldY to 0.
+			set drx to 0.
+			set dry to 0.
+			set velpitPIDF:setpoint to -0.00009.
+			set velyawPIDF:setpoint to 0.
+		} else {
+			set hoverWait to hoverWait + 1.
+		}
+	}
+	if mode = 6 {
+		set dumbTheta to arctan2(dLat, dLng).
+		set theta to mod(dumbTheta+360, 360).
+		
+		set inP to steeringmanager:pitchpid:output / steeringmanager:pitchpid:maxoutput.
+		set inY to steeringmanager:yawpid:output / steeringmanager:yawpid:maxoutput.
+		set inR to steeringmanager:rollpid:output / steeringmanager:rollpid:maxoutput.
+		
+		print "inP: " + inP at (4,15).
+		print "inY: " + inY at (4,16).
+		print "inR: " + inR at (4,17).
+		
+		print "dImpLat: " + dImpLat at (4,18).
+		print "dImpLng: " + dImpLng at (4,19).	
+		
+		set oldX to rotX.
+		set oldY to rotY.
+				
+		set rotX to (dImpLat * cos(theta)) - (dImpLng * sin(theta)).
+		set rotY to (dImpLat * sin(theta)) + (dImpLng * cos(theta)).
+		
+		set drx to (oldX - rotX) / dt.
+		set dry to (oldY - rotY) / dt. 
+
+		print "rX: " + rotX at (4,21).
+		print "rY: " + rotY at (4,22).
+		print "drX: " + drx at (4,23).
+		print "drY: " + dry at (4,24).
+		
+		set velpitPIDF:setpoint to latvelPID:update(time:seconds, rotY).
+		set steerPitch to -velpitPIDF:update(time:seconds, dry).
+
+		set velyawPIDF:setpoint to lngvelPID:update(time:seconds, rotX).
+		set steerRoll to -velyawPIDF:update(time:seconds, drx).
+		
+		set steerYaw to max(min((10000 * rotX), 5), -5).
+		//set steerYaw to (0.5 * steerRoll).
+		
+		print "pitchError: " + velpitPIDF:error at (4,25).
+		print "yawError: " + velyawPIDF:error at (4,26).
+		
+		lock steering to heading(tar_bearing() + 180, 90) + R(steerYaw, steerPitch, steerRoll).
+		doFlaps(inP, inY, inR).
+		if (alt:radar < 1500) {
+			set mode to 7.	
+			lock throttle to 0.5.
+			set velthrPID:maxoutput to 0.5.
+			wait 2.
+			toggle ag8.
+			wait 0.2.
+			toggle ag9.
+			wait 0.2.
+			toggle ag7.
+			wait 2.
+			toggle ag3.
+			//toggle ag1.
+			wait 1.
+			noseCone:getmodule("ModuleCommand"):doevent("control point: docking").
+			set steerPitch to 0.
+			set steerYaw to 0.
+			set endRoll to 180.
+			lock steering to heading(90, 90) + R(steerPitch, steerYaw, endRoll).
+			fl:getmodule("ModuleControlSurface"):setfield("deploy angle", 60).
+			fr:getmodule("ModuleControlSurface"):setfield("deploy angle", 60).
+			rl:getmodule("ModuleControlSurface"):setfield("deploy angle", 60).
+			rr:getmodule("ModuleControlSurface"):setfield("deploy angle", 60).
+			set pitchAim to 90.
+			wait 3.
+			RCS off.
+			lock steering to heading(vel_bearing() + 180, ret_pitch()) + R(steerPitch,steerYaw,endRoll).
+			set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+			set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+			lock throttle to tval.
+			clearscreen.
+			set latvelPID:setpoint to targLat.
+			set lngvelPID:setpoint to targLng.
+		}
+	}
+	if mode = 7 {
+		set velthrPID:setpoint to altvelPID:update(time:seconds, alt:radar - offset).
+		set tval to velthrPID:update(time:seconds, ship:verticalspeed).
+		lock throttle to tval.
+		
+		set velpitPID:setpoint to latvelPID:update(time:seconds, ship:geoposition:lat).
+		set steerPitch to -velpitPID:update(time:seconds, velLat).
+		
+		set velyawPID:setpoint to lngvelPID:update(time:seconds, ship:geoposition:lng).
+		set steerYaw to -velyawPID:update(time:seconds, velLng).
+		lock steering to heading(90, 90) + R(steerPitch,steerYaw,endRoll).
+	
+		set tSpeed to abs(verticalspeed).
+
+		
+		if ((tSpeed) < 30 and shutdown1 = 0) {
+			toggle ag9.
+			wait 0.1.
+			set velthrPID:maxoutput to 0.8.
+			set shutdown1 to 1.
+			set altvelPID:minoutput to -5.
+		}
+		
+		if (alt:radar - offset < 75 and shutdown2 = 0) {
+			toggle ag8.
+			wait 0.1.
+			set shutdown2 to 2.
+			set velthrPID:maxoutput to 1.
+		}
+		
+		if (alt:radar - offset < 5 and not gear) {
+			toggle gear.
+			wait 0.3.
+			toggle ag3.
+			wait 0.4.
+			toggle ag2.
+		}
+		if (alt:radar - offset < 0.5) {
+			set mode to 0.
+			lock throttle to 0.
+			unlock steering.
+			SAS on.
+			toggle ag4.
+		}
+	}
+	wait 0.01.
+	set prevPos to curPos.
+	set oldT to missionT.
+}
+
+function impLoc {
+	if (addons:tr:hasImpact) { 
+		return addons:tr:impactpos.
+	} else {
+		return ship:geoposition.
+	}
+}
+
+function tar_bearing {
+	local ta is ship:geoposition:lat.
+	local tb is targLat.
+	local dl is -ship:geoposition:lng + targLng.
+	local x is (cos(tb) * sin(dl)).
+	local y is ((cos(ta) * sin(tb)) - (sin(ta) * cos(tb) * cos(dl))).
+	local b is arctan2(x,y).
+	return mod(b+360, 360).
+}
+
+function vel_bearing {
+    local trig_x is vdot( heading( 90, 0 ):vector, ship:srfprograde:vector ).
+    local trig_y is vdot( heading(  0, 0 ):vector, ship:srfprograde:vector ).
+
+    return mod( arctan2( trig_x, trig_y ) +360, 360 ).
+}
+
+function ret_pitch { 
+	return 90 - vang(ship:up:vector, ship:srfretrograde:vector).
+}
+
+function pro_pitch { 
+	return 90 - vang(ship:up:vector, ship:srfprograde:vector).
+}
+function imp_dist {
+	parameter lat.
+	parameter lng.
+	local cord is latlng(lat, lng):position.
+	set d to (cord - impLoc():position):mag.
+	return d.
+}
+
+function veh_dist {
+	set d to (ship:geoposition:position - targGeo:position):mag.
+	return d.
+}
+
+function doFlaps {
+	parameter inP.
+	parameter inY.
+	parameter inR.
+	
+	local flv is min(max(45 + (inP * 40) + (inY * 30), 0), 90).
+	local frv is min(max(45 + (inP * 40) + (inY * -30), 0), 90).
+	
+	local rlv is min(max(45 + (inP * -40) + (inY * 30), 0), 90).
+	local rrv is min(max(45 + (inP * -40) + (inY * -30), 0), 90).
+	
+	fl:getmodule("ModuleControlSurface"):setfield("deploy angle", flv).
+	fr:getmodule("ModuleControlSurface"):setfield("deploy angle", frv).
+	rl:getmodule("ModuleControlSurface"):setfield("deploy angle", rlv).
+	rr:getmodule("ModuleControlSurface"):setfield("deploy angle", rrv).
+	
+}
